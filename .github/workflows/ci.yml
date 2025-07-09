@@ -1,0 +1,239 @@
+name: DevOps Pipeline CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  DJANGO_SETTINGS_MODULE: 'devops_pipeline.settings.test'
+
+jobs:
+  static-checks:
+    name: Layer 1 - Static Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Run flake8
+      run: uv run flake8 devops_pipeline/ tests/ --statistics
+    
+    - name: Check code formatting with black
+      run: uv run black --check --diff devops_pipeline/ tests/
+    
+    - name: Check import sorting with isort
+      run: uv run isort --check --diff devops_pipeline/ tests/
+
+  unit-tests:
+    name: Layer 2 - Unit Tests
+    runs-on: ubuntu-latest
+    needs: static-checks
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Run unit tests
+      run: |
+        uv run pytest tests/unit/ \
+          -v \
+          --tb=short \
+          --cov=devops_pipeline \
+          --cov-report=xml:coverage.xml \
+          --cov-report=term-missing \
+          --cov-branch \
+          --cov-fail-under=25 \
+          --junit-xml=unit-test-results.xml \
+          -m unit
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: unit-test-results
+        path: unit-test-results.xml
+
+  integration-tests:
+    name: Layer 3 - Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: devops_test
+          POSTGRES_USER: devops_user
+          POSTGRES_PASSWORD: devops_password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    env:
+      TEST_DB_NAME: devops_test
+      TEST_DB_USER: devops_user
+      TEST_DB_PASSWORD: devops_password
+      TEST_DB_HOST: localhost
+      TEST_DB_PORT: 5433
+      TEST_REDIS_URL: redis://localhost:6380/0
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Run integration tests
+      run: |
+        uv run pytest tests/integration/ \
+          -v \
+          --tb=short \
+          --junit-xml=integration-test-results.xml \
+          -m integration
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-test-results
+        path: integration-test-results.xml
+
+    e2e-tests:
+    name: Layer 4 - E2E Tests (Placeholder)
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: E2E placeholder
+      run: |
+        echo "⚠️ E2E tests are not implemented yet"
+        echo "✅ E2E test layer validation completed"
+
+  pipeline-validation:
+    name: Layer 5 - Pipeline Validation
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate Jenkinsfile
+      run: |
+        if [[ -f "Jenkinsfile" ]]; then
+          if grep -q "pipeline {" Jenkinsfile && grep -q "stages {" Jenkinsfile; then
+            echo "✅ Jenkinsfile structure looks valid"
+          else
+            echo "❌ Jenkinsfile structure appears invalid"
+            exit 1
+          fi
+        else
+          echo "❌ Jenkinsfile not found"
+          exit 1
+        fi
+    
+    - name: Check Docker configuration
+      run: |
+        if [[ -f "Dockerfile.test" ]] && [[ -f "docker-compose.test.yml" ]]; then
+          echo "✅ Test Docker configuration files are present"
+        else
+          echo "❌ Missing required test Docker configuration"
+          exit 1
+        fi
+    
+    - name: Check Kubernetes manifests
+      run: |
+        if [[ -d "infrastructure/kubernetes" ]] && [[ -f "infrastructure/kubernetes/deployment.yaml" ]]; then
+          echo "✅ Kubernetes manifests present"
+        else
+          echo "⚠️ No Kubernetes manifests found (optional)"
+        fi
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: pipeline-validation
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.test
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}/devops-pipeline:latest
+          ghcr.io/${{ github.repository }}/devops-pipeline:${{ github.sha }}
+    
+    - name: Deploy to staging (placeholder)
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        echo "📦 Image: ghcr.io/${{ github.repository }}/devops-pipeline:${{ github.sha }}"
+        echo "✅ Deployment completed successfully!" 

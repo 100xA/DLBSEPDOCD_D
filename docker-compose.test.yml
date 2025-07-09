@@ -1,0 +1,66 @@
+services:
+  postgres_test:
+    image: postgres:16
+    container_name: devops_test_postgres
+    environment:
+      POSTGRES_DB: devops_test
+      POSTGRES_USER: devops_user
+      POSTGRES_PASSWORD: devops_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devops_user -d devops_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - devops_test_network
+
+  redis_test:
+    image: redis:7
+    container_name: devops_test_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - devops_test_network
+
+  app_test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: devops_test_app
+    environment:
+      - DJANGO_SETTINGS_MODULE=devops_pipeline.settings.test
+      - DATABASE_URL=postgresql://devops_user:devops_password@postgres_test:5432/devops_test
+      - REDIS_URL=redis://redis_test:6379/0
+      - CELERY_BROKER_URL=redis://redis_test:6379/0
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+      redis_test:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/.venv  # Exclude virtual environment from volume mount
+    working_dir: /app
+    command: ["python", "-m", "pytest", "tests/integration/", "-v", "--tb=short"]
+    networks:
+      - devops_test_network
+
+volumes:
+  postgres_test_data:
+  redis_test_data:
+
+networks:
+  devops_test_network:
+    driver: bridge 

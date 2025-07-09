@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+docker-compose.test.yml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Test artifacts
+.pytest_cache/
+htmlcov/
+coverage.xml
+*.xml
+logs/
+*.log
+
+# Mac
+.DS_Store 

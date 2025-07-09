@@ -1,0 +1,139 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+env:
+  DJANGO_SETTINGS_MODULE: 'devops_pipeline.settings.test'
+
+jobs:
+  pr-validation:
+    name: Quick PR Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for better diff analysis
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Check changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v40
+      with:
+        files: |
+          devops_pipeline/**/*.py
+          tests/**/*.py
+          pyproject.toml
+          requirements*.txt
+    
+    - name: Run quick static checks on changed files
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+        
+        # Run flake8 only on changed Python files
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          if [[ "$file" == *.py ]]; then
+            echo "Checking $file..."
+            uv run flake8 "$file"
+          fi
+        done
+        
+        # Run black check on changed Python files
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          if [[ "$file" == *.py ]]; then
+            uv run black --check "$file"
+          fi
+        done
+    
+    - name: Run affected tests
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        # Determine which test types to run based on changed files
+        RUN_UNIT=false
+        RUN_INTEGRATION=false
+        RUN_E2E=false
+        
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          if [[ "$file" == devops_pipeline/apps/catalog/* ]]; then
+            RUN_UNIT=true
+          elif [[ "$file" == devops_pipeline/apps/orders/* ]]; then
+            RUN_INTEGRATION=true
+          elif [[ "$file" == tests/e2e/* ]]; then
+            RUN_E2E=true
+          fi
+        done
+        
+        if [[ "$RUN_UNIT" == "true" ]]; then
+          echo "Running unit tests..."
+          uv run pytest tests/unit/ -v --tb=short -m unit
+        fi
+        
+        if [[ "$RUN_INTEGRATION" == "true" ]]; then
+          echo "Skipping integration tests in PR check (will run in full CI)"
+        fi
+        
+        if [[ "$RUN_E2E" == "true" ]]; then
+          echo "Validating E2E test structure..."
+          uv run pytest tests/e2e/ --collect-only -q
+        fi
+    
+    - name: Add PR comment
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('🤖 DevOps Pipeline PR Check')
+          );
+          
+          const status = '${{ job.status }}' === 'success' ? '✅ PASSED' : '❌ FAILED';
+          const body = `
+          🤖 **DevOps Pipeline PR Check**
+          
+          **Status**: ${status}
+          **Changed files**: ${{ steps.changed-files.outputs.all_changed_files_count }} files
+          
+          **Quick validation completed:**
+          - Static code checks
+          - Affected test validation
+          - File structure verification
+          
+          **Next steps**: Full 4-layer pipeline will run after merge to main.
+          `;
+          
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: body
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          } 

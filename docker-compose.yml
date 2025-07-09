@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: your-repo/devops-pipeline:latest
+    command: gunicorn devops_pipeline.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgres://devops_user:devops_password@db:5432/devops_prod
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=devops_pipeline.settings.base
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=devops_prod
+      - POSTGRES_USER=devops_user
+      - POSTGRES_PASSWORD=devops_password
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  postgres_data: 

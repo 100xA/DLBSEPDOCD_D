@@ -1,0 +1,22 @@
+[flake8]
+max-line-length = 100
+max-complexity = 10
+select = E,W,F,C,B,D
+ignore = E203,W503,D
+exclude = .venv,*/migrations/*
+
+per-file-ignores =
+    # Allow unused imports in __init__.py files
+    __init__.py:F401,
+    # Allow long lines in settings files
+    settings/*.py:E501,
+    # Allow long lines in test files
+    tests/*.py:E501,
+    # Allow missing docstrings in test files
+    tests/*.py:D,
+    # Allow missing docstrings in migrations
+    */migrations/*.py:D,
+    # it is okay to use `from .models import *` in admin files
+    devops_pipeline/apps/*/admin.py:F403,F405,
+
+docstring-convention = numpy 

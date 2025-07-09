@@ -1,0 +1,33 @@
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    gcc \
+    libc6-dev \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN pip install uv
+
+# Set work directory
+WORKDIR /app
+
+# Copy project configuration
+COPY pyproject.toml ./
+
+# Install Python dependencies
+RUN uv pip install --system -e .
+
+# Copy project
+COPY . .
+
+# Create a non-root user
+RUN useradd --create-home --shell /bin/bash devops && \
+    chown -R devops:devops /app
+USER devops
+
+# Default command
+CMD ["python", "-m", "pytest"] 

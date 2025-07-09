@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-pipeline-deployment
+  labels:
+    app: devops-pipeline
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devops-pipeline
+  template:
+    metadata:
+      labels:
+        app: devops-pipeline
+    spec:
+      containers:
+      - name: devops-pipeline-app
+        image: your-repo/devops-pipeline:latest
+        ports:
+        - containerPort: 8000 
