@@ -15,14 +15,17 @@ RUN pip install uv
 # Set work directory
 WORKDIR /app
 
-# Copy project configuration
-COPY pyproject.toml ./
+# Copy project files
+COPY pyproject.toml uv.lock ./
 
 # Install Python dependencies
-RUN uv pip install --system -e .
+RUN uv sync --frozen
 
-# Copy project
+# Copy the rest of the project
 COPY . .
+
+# Create logs directory
+RUN mkdir -p logs
 
 # Create a non-root user
 RUN useradd --create-home --shell /bin/bash devops && \
@@ -30,4 +33,4 @@ RUN useradd --create-home --shell /bin/bash devops && \
 USER devops
 
 # Default command
-CMD ["python", "-m", "pytest"] 
+CMD ["uv", "run", "pytest"] 
