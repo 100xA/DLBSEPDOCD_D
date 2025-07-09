@@ -4,7 +4,6 @@ import os
 import sys
 
 from .base import *  # noqa
-from .base import LOGGING
 
 # Determine if running integration tests
 is_integration_test = any("tests/integration" in arg for arg in sys.argv)
@@ -78,9 +77,40 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 # Media files for tests
 DEFAULT_FILE_STORAGE = "django.core.files.storage.InMemoryStorage"
 
-# Logging for tests
-LOGGING["loggers"]["devops_pipeline"]["level"] = "WARNING"
-LOGGING["loggers"]["django"]["level"] = "WARNING"
+# Simplified logging for tests - console only to avoid file permission issues in CI
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "WARNING",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "devops_pipeline": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
 
 # Celery settings for tests
 CELERY_TASK_ALWAYS_EAGER = True
