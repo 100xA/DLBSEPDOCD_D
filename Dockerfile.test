@@ -12,17 +12,14 @@ RUN apt-get update && apt-get install -y \
 # Set work directory
 WORKDIR /app
 
-# Copy project files for dependency installation
-COPY pyproject.toml ./
-
-# Install Python dependencies using pip
-RUN pip install .
-
-# Copy the rest of the project
+# Copy all project files
 COPY . .
 
 # Create logs directory
 RUN mkdir -p logs
+
+# Install Python dependencies using pip
+RUN pip install .
 
 # Create a non-root user
 RUN useradd --create-home --shell /bin/bash devops && \
