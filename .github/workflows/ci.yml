@@ -228,6 +228,10 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
+    - name: Set lowercase repository name
+      id: repo
+      run: echo "repository=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+    
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
@@ -235,11 +239,11 @@ jobs:
         file: ./Dockerfile.test
         push: true
         tags: |
-          ghcr.io/${{ github.repository }}/devops-pipeline:latest
-          ghcr.io/${{ github.repository }}/devops-pipeline:${{ github.sha }}
+          ghcr.io/${{ steps.repo.outputs.repository }}/devops-pipeline:latest
+          ghcr.io/${{ steps.repo.outputs.repository }}/devops-pipeline:${{ github.sha }}
     
     - name: Deploy to staging (placeholder)
       run: |
         echo "🚀 Deploying to staging environment..."
-        echo "📦 Image: ghcr.io/${{ github.repository }}/devops-pipeline:${{ github.sha }}"
+        echo "📦 Image: ghcr.io/${{ steps.repo.outputs.repository }}/devops-pipeline:${{ github.sha }}"
         echo "✅ Deployment completed successfully!" 
