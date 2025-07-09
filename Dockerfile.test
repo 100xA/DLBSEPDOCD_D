@@ -9,17 +9,14 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-RUN pip install uv
-
 # Set work directory
 WORKDIR /app
 
-# Copy project files
-COPY pyproject.toml uv.lock ./
+# Copy project files for dependency installation
+COPY pyproject.toml ./
 
-# Install Python dependencies
-RUN uv sync --frozen
+# Install Python dependencies using pip
+RUN pip install .
 
 # Copy the rest of the project
 COPY . .
@@ -33,4 +30,4 @@ RUN useradd --create-home --shell /bin/bash devops && \
 USER devops
 
 # Default command
-CMD ["uv", "run", "pytest"] 
+CMD ["python", "-m", "pytest"] 
