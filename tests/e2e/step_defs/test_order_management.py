@@ -244,7 +244,5 @@ def verify_order_item(browser, item_text):
 def verify_back_on_catalog(browser):
     """Verify user is back on the catalog page."""
     wait = WebDriverWait(browser, 10)
-    catalog_header = wait.until(
-        EC.presence_of_element_located((By.TEXT, "Available Products"))
-    )
+    catalog_header = wait.until(EC.presence_of_element_located((By.TEXT, "Available Products")))
     assert catalog_header is not None
