@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Products - {{ block.super }}{% endblock %}
+
+{% block header %}Product Catalog{% endblock %}
+
+{% block content %}
+<h2>Available Products</h2>
+
+{% if products %}
+    <ul class="product-list">
+        {% for product in products %}
+        <li class="product-item" data-sku="{{ product.sku }}">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <p><strong>Price: ${{ product.price }}</strong></p>
+            <p>Stock: {{ product.stock }} available</p>
+            
+            {% if user.is_authenticated and product.is_in_stock %}
+                <form method="post" action="{% url 'orders:create_web' %}" class="order-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="sku" value="{{ product.sku }}">
+                    <div class="form-group">
+                        <label for="qty_{{ product.sku }}">Quantity:</label>
+                        <select name="qty" id="qty_{{ product.sku }}">
+                            {% for i in "123456789"|make_list %}
+                                <option value="{{ i }}">{{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" name="add_to_order">Order Now</button>
+                </form>
+            {% elif not user.is_authenticated %}
+                <p><a href="{% url 'auth:login' %}">Login to order</a></p>
+            {% else %}
+                <p><em>Out of stock</em></p>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No products available.</p>
+{% endif %}
+
+<p><a href="{% url 'orders:list' %}">View My Orders</a></p>
+{% endblock %} 

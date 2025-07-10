@@ -158,17 +158,89 @@ jobs:
         path: integration-test-results.xml
 
   e2e-tests:
-    name: Layer 4 - E2E Tests (Placeholder)
+    name: Layer 4 - E2E Tests
     runs-on: ubuntu-latest
     needs: integration-tests
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: devops_test
+          POSTGRES_USER: devops_user
+          POSTGRES_PASSWORD: devops_password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    env:
+      TEST_DB_NAME: devops_test
+      TEST_DB_USER: devops_user
+      TEST_DB_PASSWORD: devops_password
+      TEST_DB_HOST: localhost
+      TEST_DB_PORT: 5433
+      TEST_REDIS_URL: redis://localhost:6380/0
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: E2E placeholder
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Create logs directory
+      run: mkdir -p logs
+    
+    - name: Setup Chrome for E2E tests
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
+    
+    - name: Validate E2E test structure
       run: |
-        echo "⚠️ E2E tests are not implemented yet"
-        echo "✅ E2E test layer validation completed"
+        echo "📋 Validating E2E test structure..."
+        if [[ -f "tests/e2e/features/order_management.feature" && -f "tests/e2e/step_defs/test_order_management.py" ]]; then
+          echo "✅ E2E test files found"
+        else
+          echo "❌ E2E test files missing"
+          exit 1
+        fi
+    
+    - name: Run E2E tests
+      run: |
+        uv run pytest tests/e2e/ \
+          -v \
+          --tb=short \
+          --junit-xml=e2e-test-results.xml \
+          -m e2e
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-results
+        path: e2e-test-results.xml
 
   pipeline-validation:
     name: Layer 5 - Pipeline Validation

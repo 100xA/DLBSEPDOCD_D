@@ -225,17 +225,69 @@ run_integration_tests() {
     log_success "Test services cleaned up"
 }
 
-# Layer 4: End-to-End Tests (placeholder - no tests implemented)
+# Layer 4: End-to-End Tests
 run_e2e_tests() {
     local run_locally=$1
 
     echo ""
-    echo "🎭 Layer 4: End-to-End Tests (Placeholder)"
-    echo "=========================================="
+    echo "🎭 Layer 4: End-to-End Tests"
+    echo "============================"
 
-    log_warning "E2E tests are not implemented yet."
-    log_info "This layer is a placeholder for future browser-based testing."
-    log_success "E2E test layer validation completed"
+    if [[ "$run_locally" == true ]]; then
+        log_info "Running E2E tests with Selenium..."
+        
+        # Check for ChromeDriver
+        if ! command -v chromedriver &> /dev/null; then
+            log_warning "ChromeDriver not found. Installing via webdriver-manager..."
+        fi
+        
+        # Start test services
+        log_info "Starting test services..."
+        docker-compose -f docker-compose.test.yml up -d postgres_test redis_test
+        
+        # Wait for services
+        log_info "Waiting for test services to be ready..."
+        sleep 10
+        
+        # Run E2E tests
+        if uv run pytest tests/e2e/ \
+            -v \
+            --tb=short \
+            --junit-xml=e2e-test-results.xml \
+            -m e2e; then
+            
+            log_success "E2E tests passed"
+        else
+            log_error "E2E tests failed"
+            docker-compose -f docker-compose.test.yml down -v
+            return 1
+        fi
+        
+        # Clean up
+        log_info "Cleaning up test services..."
+        docker-compose -f docker-compose.test.yml down -v
+    else
+        log_info "E2E tests structure validation..."
+        
+        # Check if E2E test files exist
+        if [[ -f "tests/e2e/features/order_management.feature" && -f "tests/e2e/step_defs/test_order_management.py" ]]; then
+            log_success "E2E test files found"
+        else
+            log_error "E2E test files missing"
+            return 1
+        fi
+        
+        # Validate Gherkin syntax
+        log_info "Validating Gherkin feature files..."
+        if uv run pytest tests/e2e/ --collect-only >/dev/null 2>&1; then
+            log_success "Gherkin syntax validation passed"
+        else
+            log_error "Gherkin syntax validation failed"
+            return 1
+        fi
+        
+        log_success "E2E test layer validation completed"
+    fi
 }
 
 # Layer 5: CI/CD Pipeline Validation

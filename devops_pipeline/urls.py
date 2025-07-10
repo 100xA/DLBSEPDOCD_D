@@ -8,9 +8,12 @@ from django.urls import include, path
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
+    # Web interface for E2E testing
+    path("", include("devops_pipeline.apps.catalog.urls")),
+    path("orders/", include("devops_pipeline.apps.orders.urls")),
+    path("auth/", include("django.contrib.auth.urls")),
     # API endpoints
     path("api/v1/auth/", include("rest_framework.urls")),
-    # App URLs
     path("api/v1/orders/", include("devops_pipeline.apps.orders.urls")),
 ]
 

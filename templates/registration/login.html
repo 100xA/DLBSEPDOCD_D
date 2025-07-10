@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Login - {{ block.super }}{% endblock %}
+
+{% block header %}Login{% endblock %}
+
+{% block content %}
+<h2>Login to Your Account</h2>
+
+{% if form.errors %}
+<div class="error">
+    {{ form.errors }}
+</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="{{ form.username.id_for_label }}">Username:</label>
+        {{ form.username }}
+    </div>
+    <div class="form-group">
+        <label for="{{ form.password.id_for_label }}">Password:</label>
+        {{ form.password }}
+    </div>
+    <button type="submit" class="btn">Login</button>
+</form>
+
+<p><a href="{% url 'catalog:product_list' %}">Back to Products</a></p>
+{% endblock %} 
