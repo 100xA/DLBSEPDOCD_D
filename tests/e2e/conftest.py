@@ -1,8 +1,9 @@
 """E2E test configuration and fixtures."""
 
-import pytest
 from django.contrib.auth import get_user_model
 from django.test import LiveServerTestCase
+
+import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service

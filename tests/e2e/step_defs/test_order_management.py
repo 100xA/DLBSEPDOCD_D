@@ -1,6 +1,7 @@
 """Step definitions for order management E2E tests."""
 
 from django.contrib.auth import get_user_model
+
 from pytest_bdd import given, parsers, scenarios, then, when
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -243,5 +244,7 @@ def verify_order_item(browser, item_text):
 def verify_back_on_catalog(browser):
     """Verify user is back on the catalog page."""
     wait = WebDriverWait(browser, 10)
-    catalog_header = wait.until(EC.presence_of_element_located((By.TEXT, "Available Products")))
+    catalog_header = wait.until(
+        EC.presence_of_element_located((By.TEXT, "Available Products"))
+    )
     assert catalog_header is not None

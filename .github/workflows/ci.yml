@@ -190,7 +190,7 @@ jobs:
     env:
       TEST_DB_NAME: devops_test
       TEST_DB_USER: devops_user
-      TEST_DB_PASSWORD: devops_password
+      TEST_DB_PAgit SSWORD: devops_password
       TEST_DB_HOST: localhost
       TEST_DB_PORT: 5433
       TEST_REDIS_URL: redis://localhost:6380/0
