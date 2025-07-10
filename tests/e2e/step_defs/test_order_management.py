@@ -1,15 +1,12 @@
 """Step definitions for order management E2E tests."""
 
-import pytest
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from pytest_bdd import given, parsers, scenarios, then, when
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from devops_pipeline.apps.catalog.models import Product
-from devops_pipeline.apps.orders.models import Order
 
 User = get_user_model()
 
@@ -29,7 +26,11 @@ def create_test_user(db, username, password):
     User.objects.create_user(username=username, password=password)
 
 
-@given(parsers.parse('a test product exists with SKU "{sku}", name "{name}", price "{price}", and stock {stock:d}'))
+@given(
+    parsers.parse(
+        'a test product exists with SKU "{sku}", name "{name}", price "{price}", and stock {stock:d}'
+    )
+)
 def create_test_product(db, sku, name, price, stock):
     """Create a test product."""
     Product.objects.create(
@@ -38,7 +39,7 @@ def create_test_product(db, sku, name, price, stock):
         description=f"Description for {name}",
         price=price,
         stock=stock,
-        is_active=True
+        is_active=True,
     )
 
 
@@ -57,7 +58,7 @@ def ensure_logged_out(browser):
     try:
         logout_link = browser.find_element(By.LINK_TEXT, "Logout")
         logout_link.click()
-    except:
+    except Exception:
         pass  # User is already logged out
 
 
@@ -65,22 +66,22 @@ def ensure_logged_out(browser):
 def login_user(browser, live_server, username):
     """Log in the user."""
     browser.get(live_server.url)
-    
+
     # Click login link
     login_link = browser.find_element(By.LINK_TEXT, "Login")
     login_link.click()
-    
+
     # Fill login form
     username_field = browser.find_element(By.NAME, "username")
     password_field = browser.find_element(By.NAME, "password")
-    
+
     username_field.send_keys(username)
     password_field.send_keys("testpassword123")
-    
+
     # Submit form
     login_button = browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
     login_button.click()
-    
+
     # Wait for redirect
     wait = WebDriverWait(browser, 10)
     wait.until(EC.presence_of_element_located((By.TEXT, f"Welcome, {username}!")))
@@ -90,17 +91,17 @@ def login_user(browser, live_server, username):
 def place_order(browser, live_server, sku, quantity):
     """Place an order for a product."""
     browser.get(live_server.url)
-    
+
     # Find product and select quantity
     product_item = browser.find_element(By.CSS_SELECTOR, f'[data-sku="{sku}"]')
     select_element = product_item.find_element(By.NAME, "qty")
     select = Select(select_element)
     select.select_by_value(str(quantity))
-    
+
     # Click order button
     order_button = product_item.find_element(By.NAME, "add_to_order")
     order_button.click()
-    
+
     # Wait for success page
     wait = WebDriverWait(browser, 10)
     wait.until(EC.presence_of_element_located((By.TEXT, "Order Successfully Created!")))
@@ -112,14 +113,14 @@ def when_user_logs_in(browser, username, password):
     # Click login link
     login_link = browser.find_element(By.LINK_TEXT, "Login")
     login_link.click()
-    
+
     # Fill and submit login form
     username_field = browser.find_element(By.NAME, "username")
     password_field = browser.find_element(By.NAME, "password")
-    
+
     username_field.send_keys(username)
     password_field.send_keys(password)
-    
+
     login_button = browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
     login_button.click()
 
@@ -187,7 +188,9 @@ def verify_success_message(browser):
 def verify_order_total(browser, total):
     """Verify the order total."""
     wait = WebDriverWait(browser, 10)
-    total_element = wait.until(EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '${total}')]")))
+    total_element = wait.until(
+        EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '${total}')]"))
+    )
     assert total_element is not None
 
 
@@ -195,7 +198,9 @@ def verify_order_total(browser, total):
 def verify_order_status(browser, status):
     """Verify the order status."""
     wait = WebDriverWait(browser, 10)
-    status_element = wait.until(EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '{status}')]")))
+    status_element = wait.until(
+        EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '{status}')]"))
+    )
     assert status_element is not None
 
 
@@ -203,7 +208,9 @@ def verify_order_status(browser, status):
 def verify_text_present(browser, text):
     """Verify specific text is present on the page."""
     wait = WebDriverWait(browser, 10)
-    element = wait.until(EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '{text}')]")))
+    element = wait.until(
+        EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '{text}')]"))
+    )
     assert element is not None
 
 
@@ -226,7 +233,9 @@ def verify_order_history(browser):
 def verify_order_item(browser, item_text):
     """Verify specific order item text."""
     wait = WebDriverWait(browser, 10)
-    item_element = wait.until(EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '{item_text}')]")))
+    item_element = wait.until(
+        EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '{item_text}')]"))
+    )
     assert item_element is not None
 
 
@@ -235,4 +244,4 @@ def verify_back_on_catalog(browser):
     """Verify user is back on the catalog page."""
     wait = WebDriverWait(browser, 10)
     catalog_header = wait.until(EC.presence_of_element_located((By.TEXT, "Available Products")))
-    assert catalog_header is not None 
+    assert catalog_header is not None

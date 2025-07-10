@@ -54,7 +54,7 @@ def create_order_web(request):
     """Create a new order via web form."""
     if request.method != "POST":
         return redirect("catalog:product_list")
-    
+
     try:
         sku = request.POST.get("sku")
         qty = int(request.POST.get("qty", 1))
@@ -87,5 +87,5 @@ def create_order_web(request):
 @login_required
 def order_list(request):
     """Display user's orders."""
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'orders/order_list.html', {'orders': orders})
+    orders = Order.objects.filter(user=request.user).order_by("-created_at")
+    return render(request, "orders/order_list.html", {"orders": orders})
