@@ -24,7 +24,7 @@
         <div class="header">
             <h1>{% block header %}DevOps Pipeline E-commerce{% endblock %}</h1>
             {% if user.is_authenticated %}
-                <p>Welcome, {{ user.username }}! <a href="{% url 'auth:logout' %}">Logout</a></p>
+                <p>Welcome, {{ user.username }}! <a href="{% url 'auth:logout' %}">Logout</a> | <a href="{% url 'orders:list' %}">View My Orders</a></p>
             {% else %}
                 <p><a href="{% url 'auth:login' %}">Login</a></p>
             {% endif %}

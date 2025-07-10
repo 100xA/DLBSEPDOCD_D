@@ -11,7 +11,7 @@ urlpatterns = [
     # Web interface for E2E testing
     path("", include("devops_pipeline.apps.catalog.urls")),
     path("orders/", include("devops_pipeline.apps.orders.urls")),
-    path("auth/", include("django.contrib.auth.urls")),
+    path("auth/", include(("django.contrib.auth.urls", "auth"), namespace="auth")),
     # API endpoints
     path("api/v1/auth/", include("rest_framework.urls")),
     path("api/v1/orders/", include("devops_pipeline.apps.orders.urls")),

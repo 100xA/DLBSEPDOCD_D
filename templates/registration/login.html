@@ -24,6 +24,8 @@
         {{ form.password }}
     </div>
     <button type="submit" class="btn">Login</button>
+    
+    <input type="hidden" name="next" value="{{ next|default:'/' }}">
 </form>
 
 <p><a href="{% url 'catalog:product_list' %}">Back to Products</a></p>

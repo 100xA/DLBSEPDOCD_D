@@ -1,7 +1,6 @@
 """E2E test configuration and fixtures."""
 
 from django.contrib.auth import get_user_model
-from django.test import LiveServerTestCase
 
 import pytest
 from selenium import webdriver
@@ -14,23 +13,8 @@ from devops_pipeline.apps.catalog.models import Product
 User = get_user_model()
 
 
-@pytest.fixture(scope="session")
-def django_db_setup():
-    """Set up test database."""
-    from django.test.utils import setup_test_environment, teardown_test_environment
-
-    setup_test_environment()
-    yield
-    teardown_test_environment()
-
-
-@pytest.fixture(scope="session")
-def live_server(django_db_setup):
-    """Start Django live server for E2E tests."""
-    server = LiveServerTestCase()
-    server._pre_setup()
-    yield server
-    server._post_teardown()
+# Use the built-in live_server fixture from pytest-django
+# No need to define our own - it's automatically available
 
 
 @pytest.fixture(scope="session")
