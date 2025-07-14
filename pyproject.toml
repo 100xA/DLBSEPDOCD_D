@@ -33,6 +33,11 @@ dependencies = [
     "black~=24.4.2",
     "isort~=5.13.2",
     "requests~=2.31.0",
+    
+    # Security testing dependencies
+    "bandit~=1.7.5",
+    "safety~=3.0.0",
+    "semgrep~=1.45.0",
 
     "gunicorn~=22.0.0",
     "python-dotenv~=1.0.0",

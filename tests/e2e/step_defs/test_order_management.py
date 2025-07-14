@@ -89,7 +89,9 @@ def login_user(browser, live_server, username):
 
     # Wait for redirect
     wait = WebDriverWait(browser, 10)
-    wait.until(EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), 'Welcome, {username}!')]")))
+    wait.until(
+        EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), 'Welcome, {username}!')]"))
+    )
 
 
 @given(parsers.parse('the user has placed an order for product "{sku}" with quantity {quantity:d}'))
@@ -109,7 +111,11 @@ def place_order(browser, live_server, sku, quantity):
 
     # Wait for success page
     wait = WebDriverWait(browser, 10)
-    wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Order Successfully Created!')]")))
+    wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(), 'Order Successfully Created!')]")
+        )
+    )
 
 
 @when(parsers.parse('the user logs in with username "{username}" and password "{password}"'))
@@ -134,7 +140,9 @@ def when_user_logs_in(browser, username, password):
 def wait_for_catalog_redirect(browser):
     """Wait for redirect to catalog page."""
     wait = WebDriverWait(browser, 10)
-    wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Available Products')]")))
+    wait.until(
+        EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Available Products')]"))
+    )
 
 
 @when(parsers.parse('the user selects quantity "{quantity}" for product "{sku}"'))
@@ -171,7 +179,11 @@ def navigate_to_orders(browser):
 def on_confirmation_page(browser):
     """Verify user is on order confirmation page."""
     wait = WebDriverWait(browser, 10)
-    wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Order Successfully Created!')]")))
+    wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(text(), 'Order Successfully Created!')]")
+        )
+    )
 
 
 @when('the user clicks "Continue Shopping"')
@@ -248,5 +260,7 @@ def verify_order_item(browser, item_text):
 def verify_back_on_catalog(browser):
     """Verify user is back on the catalog page."""
     wait = WebDriverWait(browser, 10)
-    catalog_header = wait.until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Available Products')]")))
+    catalog_header = wait.until(
+        EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Available Products')]"))
+    )
     assert catalog_header is not None

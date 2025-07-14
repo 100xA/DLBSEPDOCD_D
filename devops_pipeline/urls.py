@@ -11,10 +11,13 @@ urlpatterns = [
     # Web interface for E2E testing
     path("", include("devops_pipeline.apps.catalog.urls")),
     path("orders/", include("devops_pipeline.apps.orders.urls")),
-    path("auth/", include(("django.contrib.auth.urls", "auth"), namespace="auth")),
+    path("logistics/", include("devops_pipeline.apps.logistics.urls")),
+    path("auth/", include("devops_pipeline.apps.auth.urls")),
+    path("accounts/", include(("django.contrib.auth.urls", "accounts"), namespace="accounts")),
     # API endpoints
     path("api/v1/auth/", include("rest_framework.urls")),
     path("api/v1/orders/", include("devops_pipeline.apps.orders.urls")),
+    path("api/v1/logistics/", include("devops_pipeline.apps.logistics.urls")),
 ]
 
 # Serve media files in development

@@ -34,8 +34,10 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "devops_pipeline.apps.auth",
     "devops_pipeline.apps.catalog",
     "devops_pipeline.apps.orders",
+    "devops_pipeline.apps.logistics",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
